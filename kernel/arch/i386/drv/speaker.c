@@ -26,9 +26,8 @@ void nosound() {
  	outb(0x61, tmp);
  }
  
- //Make a beep
-void beep() {
- 	 play_sound(1000);
- 	 sleep(100);
- 	 nosound();
- }
+void beep(int frequency, int duration) {
+	play_sound(frequency);
+	sleep(duration); // Для Windows
+	nosound();
+}

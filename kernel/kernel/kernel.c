@@ -3,8 +3,11 @@
 void kernel_early(__attribute__((unused)) multiboot_info_t* mbd, __attribute__((unused)) unsigned int magic) {
     terminal_initialize(); 
     init_hal(mbd);
+    check();
+    printf("PC Speaker testing!\n\n");
+    beep(6, 10);
     terminal_startscreen();
-    //beep();
+    
     printf("\nWelcome to Veonter v0.0.2!\n");
     printf("/>");
 

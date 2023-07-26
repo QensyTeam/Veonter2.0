@@ -11,7 +11,7 @@
 #define TIMER_FREQUENCY     100  // Частота таймера в Гц
 #define SECONDS_TO_RUN      10   // Количество секунд, в течение которых будет выводиться сообщение
 
-static unsigned int ticks = 0;
+unsigned int ticks = 0;
 BOOL should_run = TRUE;
 
 void timer_irq_handler(__attribute__ ((unused)) registers_t r) {

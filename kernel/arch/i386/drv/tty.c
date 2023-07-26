@@ -13,8 +13,9 @@ char* title =
 \t\t\t\t  ##   #####  ####  ##  ##   ##   ##### ##  ##\n\n";
 
 void terminal_startscreen() {
-    terminal_set_color(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_BROWN));
+    terminal_set_color(vga_entry_color(VGA_COLOR_LIGHT_MAGENTA, VGA_COLOR_BLACK));
     printf(title);
+    terminal_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
 }
 
 
@@ -22,7 +23,7 @@ void terminal_startscreen() {
 void terminal_initialize(void) {
 	terminal_row = 0;
 	terminal_column = 0;
-	terminal_color = vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_BROWN);
+	terminal_color = vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 	terminal_buffer = VGA_MEMORY;
 	for (size_t y = 0; y < VGA_HEIGHT; y++) {
 		for (size_t x = 0; x < VGA_WIDTH; x++) {
@@ -37,11 +38,11 @@ void terminal_initialize(void) {
 }
 
 void check(void) {
-	terminal_set_color(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_BROWN));
+	terminal_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
 	printf("[ ");
-	terminal_set_color(vga_entry_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BROWN));
+	terminal_set_color(vga_entry_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK));
 	printf("OK");
-	terminal_set_color(vga_entry_color(VGA_COLOR_BLACK, VGA_COLOR_BROWN));
+	terminal_set_color(vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
 	printf(" ] - ");
 }
 
