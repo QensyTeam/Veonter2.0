@@ -5,6 +5,6 @@ export PATH="$HOME/opt/cross/bin:$PATH"  # Добавляем эту коман�
 
 . ./iso.sh
 
-qemu-system-i386 -cdrom Veonter.iso -audiodev pa,id=pa0 -M pcspk-audiodev=pa0
+qemu-system-i386 -cdrom Veonter.iso -audiodev pa,id=pa0 -M pcspk-audiodev=pa0  -serial mon:stdio
 
 . ./clean.sh
