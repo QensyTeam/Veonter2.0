@@ -5,6 +5,8 @@
 
 #include <stdint.h>
 
+#define qemu_log(M, ...) __com_formatString(0x3f8,"[LOG] (%s:%s:%d) " M "\n", __FILE__, __FUNCTION__, __LINE__, ##__VA_ARGS__)
+
 typedef unsigned int 	u32int;
 typedef          int	s32int;
 typedef unsigned short	u16int;
