@@ -23,3 +23,5 @@
 #include "../../arch/i386/vga.h"
 #include <kernel/multiboot.h>
 #include <kernel/hal.h>
+#include <kernel/drv/vfs.h>
+#include <kernel/fs/sefs.h>
