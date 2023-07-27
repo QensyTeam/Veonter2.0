@@ -1,5 +1,6 @@
 #include <kernel/kernel.h>
 bool initRD = FALSE;
+multiboot_info_t* multiboot;
 /**
  * @brief Монтирует виртуальный диск с файловой системой Sayori Easy File System
  *
@@ -14,7 +15,7 @@ void initrd_sefs(size_t irdst, size_t irded){
     qemu_log("[InitRD] [SEFS] The virtual disk space is located at address %x.", irdst);
     qemu_log("[InitRD] [SEFS] The virtual disk space is ends at %x.", irded);
     
-    vfs_reg(irdst, irded, VFS_TYPE_MOUNT_SEFS);
+    //vfs_reg(irdst, irded, VFS_TYPE_MOUNT_SEFS);
     
     initRD = true;
 }
@@ -37,7 +38,7 @@ void kModules_Init(){
 			mod_start[i] = *(uint32_t*)(multiboot->mods_addr + 8*i);
 			mod_end[i] = *(uint32_t*)(multiboot->mods_addr + 8*i + 4);
 
-            multiboot_module_t *mod = (multiboot_module_t *) (uint32_t*)(multiboot->mods_addr + 8*i);
+            multiboot_tag_module_t *mod = (multiboot_tag_module_t *) (uint32_t*)(multiboot->mods_addr + 8*i);
             
             mod_cmd[i] = kcalloc(strlen((char*)mod->cmdline) + 1, sizeof(char));
             strcpy(mod_cmd[i], (char*)mod->cmdline);
@@ -58,6 +59,7 @@ void kModules_Init(){
 void kernel_early(__attribute__((unused)) multiboot_info_t* mbd, __attribute__((unused)) unsigned int magic) {
     terminal_initialize(); 
     init_hal(mbd);
+	multiboot = mbd;
     check();
     printf("PC Speaker testing!\n\n");
     beep(6, 10);

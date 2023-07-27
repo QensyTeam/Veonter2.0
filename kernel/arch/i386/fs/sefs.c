@@ -284,21 +284,24 @@ void sefs_dirfree(struct dirent* ptr) {
  * 
  * @return fs_node_t - Структура с файлами
  */
-fs_node_t *sefs_initrd(uint32_t location, uint32_t end) {
+fs_node_t *sefs_initrd(uint32_t location) {
     qemu_log("[SEFS] [Init] loc: %x", location);
-    qemu_log("[SEFS] Disk size is: %d bytes.", end - location);
 
     qemu_log("SEFS INIT SCOPE =====================================");
-
-
     // Инициализирует указатели main и заголовке файлов и заполняет корневой директорий.
-    sefs_header = (sefs_header_t *)location;
-    file_headers = (sefs_file_header_t *)(location + sizeof(sefs_header_t));
+	qemu_log("Step:%d",1);
+    sefs_header = (sefs_header_t *)&location;
+	qemu_log("Step:%d",2);
+    file_headers = (sefs_file_header_t *) (location + sizeof(sefs_header_t));
+	qemu_log("Step:%d",3);
     sefs_root = (fs_node_t*)kcalloc(1, sizeof(fs_node_t));
-
+	
+	qemu_log("Step:%d",4);
     strcpy(sefs_root->name, "/");
     strcpy(sefs_root->devName, "SayoriDisk RDv2");
-
+	
+	qemu_log("Step:%d",sefs_header->nfiles);
+	qemu_log("Step:%d",5);
     sefs_root->mask = sefs_root->uid = sefs_root->gid = sefs_root->inode = sefs_root->length = 0;
     sefs_root->flags = FS_DIRECTORY;
     sefs_root->open = 0;
@@ -320,11 +323,16 @@ fs_node_t *sefs_initrd(uint32_t location, uint32_t end) {
     sefs_root->getCountElemFolder = &sefs_countElemFolder;
     sefs_root->getListElem = &sefs_list;
     sefs_root->unlistElem = &sefs_dirfree;
-
-    root_nodes = (fs_node_t*)kcalloc(sefs_header->nfiles, sizeof(fs_node_t));
+	
+	qemu_log("Step:%d",6);
+    root_nodes = kmalloc(sizeof(fs_node_t) * sefs_header->nfiles);
+	qemu_log("Step:%d|%d",6,1);
     nroot_nodes = sefs_header->nfiles;
+	qemu_log("Step:%d|%d",6,2);
     // Для каждого файла...
-    for (int i = 0; i < nroot_nodes; i++){
+    for (int i = 0; i < sefs_header->nfiles; i++){
+		
+		qemu_log("Step:%d|%d",7,i);
         // Отредактируем заголовок файла — в настоящее время в нем указывается смещение файла
         // относительно ramdisk. Мы хотим, чтобы оно указывалось относительно начала
         // памяти.
@@ -349,6 +357,7 @@ fs_node_t *sefs_initrd(uint32_t location, uint32_t end) {
     }
 
     for (int i = 0; i < sefs_header->nfiles; i++){
+		qemu_log("Step:%d|%d",8,i);
         if (root_nodes[i].flags != FS_FILE)
             continue;
         
@@ -358,7 +367,8 @@ fs_node_t *sefs_initrd(uint32_t location, uint32_t end) {
         int fpath_len = strlen(root_nodes[i].path);
         root_nodes[i].path[fpath_len+1] = '\0';
     }
-
+	
+	qemu_log("Step:%d",9);
     return sefs_root;
 }
 

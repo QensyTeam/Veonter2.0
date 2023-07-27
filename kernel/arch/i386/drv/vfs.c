@@ -58,7 +58,7 @@ void vfs_reg(size_t location, size_t end, size_t type){
     if (type == VFS_TYPE_MOUNT_SEFS){
         qemu_log("[VFS] [REG] [%d] Sayori Easy File System | Location: %x",countMount,location);
         // vfs_mount[countMount] = (fs_node_t*) kmalloc(sizeof(fs_node_t*));
-        vfs_mount[countMount++] = (fs_node_t*) sefs_initrd(location, end);
+        vfs_mount[countMount++] = (fs_node_t*) sefs_initrd(location);
         // countMount++;
     } else {
         qemu_log("[VFS] [REG] Unknown | Location: %x",location);
