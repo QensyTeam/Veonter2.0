@@ -12,7 +12,7 @@ extern void panic(const char *message, const char *file, u32int line)
     printf(") at ");
     printf(file);
     printf(":");
-    printf("%i", line);
+    printf("%d", line);
     printf("\n");
     // Halt by going into an infinite loop.
     for(;;);
@@ -28,7 +28,7 @@ extern void panic_assert(const char *file, u32int line, const char *desc)
     printf(") at ");
     printf(file);
     printf(":");
-    printf("%i", line);
+    printf("%d", line);
     printf("\n");
     // Halt by going into an infinite loop.
     for(;;);

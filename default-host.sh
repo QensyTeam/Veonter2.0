@@ -1,2 +1,2 @@
 #!/bin/sh
-echo i686-elf
+echo /opt/cross/bin/i686-elf
