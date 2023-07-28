@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <kernel/sys/ordered_array.h>
 #include <kernel/panic.h>
+#include <stddef.h>
 
 /* Used for u32int and other typedefs */
 #include <stdlib.h>
@@ -75,6 +76,7 @@ u32int kmalloc(u32int sz);
 
 /* General deallocation function. */
 void kfree(void *p);
+void* kcalloc(size_t count, size_t size);
 
 
 #endif // KHEAP_H

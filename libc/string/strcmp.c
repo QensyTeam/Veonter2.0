@@ -1,5 +1,7 @@
 #include <string.h>
 
+#include <stdbool.h>
+
 /**
  * @brief Сравнение строк
  *

@@ -90,7 +90,7 @@ int vfs_findFile(const char* filename);
 bool vfs_exists(const char* filename);
 uint32_t vfs_read(int node, int elem, size_t offset, size_t size, void *buf);
 char* vfs_readChar(int node,int elem);
-size_t vfs_findDir(char* path);
+uint32_t vfs_findDir(const char* path);
 size_t vfs_getLengthFilePath(const char* filename);
 size_t vfs_getLengthFile(int node,int elem);
 int vfs_getOffsetFile(int node,int elem);

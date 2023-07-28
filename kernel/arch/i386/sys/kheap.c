@@ -414,3 +414,11 @@ void free_kheap(void *p, heap_t *heap){
     insert_ordered_array((void*)header, &heap->index);
   }
 }
+
+void* kcalloc(size_t count, size_t size) {
+    void* ptr = (void*)kmalloc(count * size); // Explicitly cast to void*
+    if (ptr != NULL) {
+        memset(ptr, 0, count * size);
+    }
+    return ptr;
+}

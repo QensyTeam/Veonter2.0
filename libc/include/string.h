@@ -4,14 +4,13 @@
 #include <sys/cdefs.h>
 
 #include <stddef.h>
-
+#include <stdbool.h>
 
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Boolean type */
-#define bool int
+
 
 int memcmp(const void*, const void*, size_t);
 void* memcpy(void* __restrict, const void* __restrict, size_t);

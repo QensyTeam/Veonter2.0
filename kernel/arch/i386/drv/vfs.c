@@ -10,11 +10,9 @@ size_t countMount = 0;			///< Кол-во смонтированных устр�
  * @param int node - Адрес монтирования
  * @param char* path - Путь к файлу (виртуальный)
  */
-void vfs_getPath(int node, const char* path, char* buf){
-    // strcpy(buf, path);
-    substr(buf, path, strlen(vfs_mount[node]->name), strlen(path));
-    
-    // qemu_log("Before: %s; After: %s; Path in node: %s", path, buf, vfs_mount[node]->name);
+void vfs_getPath(int node, const char *path, char *buf) {
+    strncpy(buf, path, strlen(path) + 1);
+    buf[strlen(vfs_mount[node]->name)] = '\0';
 }
 
 /**
@@ -63,6 +61,7 @@ void vfs_reg(size_t location, size_t end, size_t type){
     } else {
         qemu_log("[VFS] [REG] Unknown | Location: %x",location);
     }
+    end=end;
 }
 
 /**
@@ -95,7 +94,7 @@ int vfs_findFile(const char* filename){
     //qemu_log("[VFS] [FindFile] File: `%s`",filename);
     int node = vfs_foundMount(filename);
     if (vfs_mount[node]->findFile) {
-        char* path = kmalloc(sizeof(char)*strlen(filename));
+        char* path = (char*)kmalloc(sizeof(char) * (strlen(filename) + 1));
         vfs_getPath(node, filename, path);
         uint32_t elem = vfs_mount[node]->findFile(path);
 
@@ -169,24 +168,17 @@ char* vfs_readChar(int node,int elem){
  *
  * @return uint32_t - Индекс папки, или отрицательное значение при ошибке
  */
-uint32_t vfs_findDir(char* path){
-    qemu_log("`%s`",path);
-
+uint32_t vfs_findDir(const char* path){
     int node = vfs_foundMount(path);
-
-    if (vfs_mount[node]->findDir != 0){
-        char* c_path = kmalloc(sizeof(char)*(strlen(path)+1));
-
+    if (vfs_mount[node]->findDir != 0) {
+        char* c_path = (char*)kmalloc(strlen(path) + 1);
         vfs_getPath(node, path, c_path);
-
-		qemu_log("Got path: %s", c_path);
 
         uint32_t elem = vfs_mount[node]->findDir(c_path);
 
         kfree(c_path);
         return elem;
     }
-
     return -1;
 }
 
@@ -199,8 +191,8 @@ uint32_t vfs_findDir(char* path){
  */
 size_t vfs_getLengthFilePath(const char* filename){
   int node = vfs_foundMount(filename);
-  if (vfs_mount[node]->findFile != 0 && vfs_mount[node]->getLengthFile != 0){
-        char* path = kmalloc(sizeof(char)*strlen(filename));
+    if (vfs_mount[node]->findFile != 0 && vfs_mount[node]->getLengthFile != 0) {
+        char* path = (char*)kmalloc(sizeof(char) * (strlen(filename) + 1));
         vfs_getPath(node, filename, path);
         uint32_t elem = vfs_mount[node]->findFile(path);
         size_t size = vfs_mount[node]->getLengthFile(elem);
@@ -297,7 +289,7 @@ char* vfs_getName(int node){
 size_t vfs_getCountElemDir(char* path){
     int node = vfs_foundMount(path);
     if (vfs_mount[node]->getCountElemFolder != 0) {
-        char* c_path = kmalloc(sizeof(char)*strlen(path));
+        char* c_path = (char*)kmalloc(sizeof(char) * (strlen(path) + 1));
         vfs_getPath(node, path, c_path);
 
         uint32_t folder_elems = vfs_mount[node]->getCountElemFolder(c_path);
@@ -318,11 +310,10 @@ size_t vfs_getCountElemDir(char* path){
 struct dirent* vfs_getListFolder(char* path){
     int node = vfs_foundMount(path);
     struct dirent* elem = 0;
-    if (vfs_mount[node]->getListElem != 0){
-        char* c_path = kmalloc(sizeof(char)*strlen(path));
-        
+    if (vfs_mount[node]->getListElem != 0) {
+        char* c_path = (char*)kmalloc(sizeof(char) * (strlen(path) + 1));
         vfs_getPath(node, path, c_path);
-        elem = vfs_mount[node]->getListElem(c_path);
+        struct dirent* elem = vfs_mount[node]->getListElem(c_path);
 
         kfree(c_path);
         return elem;
@@ -387,6 +378,6 @@ void vfs_unlistFolder(const char* path, struct dirent* ptr) {
     }
 }
 
-size_t vfs_byteToKByte(size_t bytes){
-    return (bytes == 0?0:bytes/1024);
+size_t vfs_byteToKByte(size_t bytes) {
+    return (bytes == 0 ? 0 : bytes / 1024);
 }

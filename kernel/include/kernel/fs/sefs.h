@@ -20,3 +20,5 @@ typedef struct {
 } sefs_file_header_t;
 
 fs_node_t *sefs_initrd(uint32_t location);
+// Change the type of sefs_root_impl to void*
+extern void* sefs_root_impl;

@@ -11,6 +11,8 @@ size_t dirName[2048];              ///< Ссылка на названия па�
 size_t diskUsed = 0;               ///< Количество используемого пространства
 size_t diskSize = 0;               ///< Общие кол-во дисков
 size_t dirCount = 0;               ///< Количество папок
+void* sefs_root_impl; // Change the type of sefs_root_impl to void*
+
 
 /**
  * @brief [SEFS] Полное чтение файла
@@ -20,10 +22,9 @@ size_t dirCount = 0;               ///< Количество папок
  * @warning IT's MEMORY LEAKY!!!
  * @return char* - Содержимое файла
  */
-char* sefs_readChar(uint32_t node){
+char* sefs_readChar(uint32_t node) {
     sefs_file_header_t header = file_headers[node];
-    //qemu_log("[SEFS] [readChar] Elem: %d",node);
-    char* buf = kmalloc(header.length);
+    char* buf = (char*)kmalloc(header.length);
     memcpy(buf, (void*)header.offset, header.length);
     return buf;
 }
@@ -66,32 +67,30 @@ uint32_t sefs_read(uint32_t node, size_t offset, size_t size, void *buffer){
  *
  * @return uint32_t - Размер записаных байтов или отрицательное значение при ошибке
  */
-uint32_t sefs_write(uint32_t node, size_t offset, size_t size, void *buffer){
+
+uint32_t sefs_write(uint32_t node, size_t offset, size_t size, void* buffer) {
     sefs_file_header_t header = file_headers[node];
-    //qemu_log("[SEFS] [Write] Elem: %d | Off: %d | Size: %d",node,offset,size);
-    if (offset > size){
+    if (offset > size) {
         return -2;
     }
-    void* newfile = kmalloc((size + offset > header.length)?(size + offset):header.length);
-    int w_tmp1 = 0;     ///< Сколько скопировано с начала
-    // int w_tmp2 = 0;     ///< Сколько вставлено с буфера
-    int w_tmp3 = 0;     ///< Сколько вставлено с остатка
-    // Сохраняем первую часть данных
-    if (offset > 0){
-        void* tmp1 = kmalloc(offset);
-        w_tmp1 = sefs_read(node,0,offset,tmp1);
+    void* newfile = (void*)kmalloc((size + offset > header.length) ? (size + offset) : header.length);
+    int w_tmp1 = 0;
+    int w_tmp3 = 0;
+    if (offset > 0) {
+        void* tmp1 = (void*)kmalloc(offset);
+        w_tmp1 = sefs_read(node, 0, offset, tmp1);
         memcpy(newfile, tmp1, offset);
+        kfree(tmp1);
     }
-    // Сохраняем буфер
     strcat(newfile, buffer);
-    // если остались остатки, то копируем
-    if ((size + offset < header.length)){
-        w_tmp3 = header.length - (size + offset);   // Откуда копируем
-        void* tmp3 = kmalloc(offset);
-        w_tmp3 = sefs_read(node,0,w_tmp3,tmp3);
+    if ((size + offset < header.length)) {
+        w_tmp3 = header.length - (size + offset);
+        void* tmp3 = (void*)kmalloc(offset);
+        w_tmp3 = sefs_read(node, 0, w_tmp3, tmp3);
         strcat(newfile, tmp3);
+        kfree(tmp3);
     }
-    return w_tmp1+size+w_tmp3;
+    return w_tmp1 + size + w_tmp3;
 }
 
 /**
@@ -125,15 +124,13 @@ size_t sefs_getOffsetFile(int node){
  * 
  * @return int - Индекс файла, или отрицательное значение при ошибке
  */
-int32_t sefs_findFile(char* filename){
-    char* file = kmalloc(sizeof(char)*256);
+int32_t sefs_findFile(char* filename) {
+    char* file = (char*)kmalloc(sizeof(char) * 256);
     char* sl = "/";
     strcpy(file, sl);
-    strcat(file,filename);
-
-    //qemu_log("[SeFS] `%s` | `%s`",filename,file);
-    for (size_t i = 0; i < sefs_header->nfiles; i++){
-        if (strcmpn(root_nodes[i].path,file)){
+    strcat(file, filename);
+    for (size_t i = 0; i < sefs_header->nfiles; i++) {
+        if (strcmpn(root_nodes[i].path, file) == 0) {
             kfree(file);
             return i;
         }
@@ -149,18 +146,14 @@ int32_t sefs_findFile(char* filename){
  *
  * @return int - Индекс папки, или отрицательное значение при ошибке
  */
-int32_t sefs_findDir(char* path){
-    char* file = kmalloc(sizeof(char)*256);
+int32_t sefs_findDir(char* path) {
+    char* file = (char*)kmalloc(sizeof(char) * 256);
     char* sl = "/";
-
     strcpy(file, sl);
     strcat(file, path);
-
-    qemu_log("[SeFS] `%s` | `%s`", path, file);
-
-    for (size_t i = 0, a = 0; i < sefs_header->nfiles; i++){
+    for (size_t i = 0, a = 0; i < sefs_header->nfiles; i++) {
         if (root_nodes[i].flags != FS_DIRECTORY) continue;
-        if (strcmpn(root_nodes[i].name, file)){
+        if (strcmpn(root_nodes[i].name, file) == 0) {
             kfree(file);
             return a;
         }
@@ -173,58 +166,44 @@ int32_t sefs_findDir(char* path){
 /**
  * @brief [SEFS] Считает количество элементов в папке
  */
-size_t sefs_countElemFolder(char* path){
-    size_t inxDir = sefs_findDir(path);
-    if (inxDir < 0) {
-        return 0;
-    }
-    size_t count = 0;
-    for (size_t i = 0; i < sefs_header->nfiles; i++){
-        if (root_nodes[i].root != inxDir){
-            continue;
+size_t sefs_countElemFolder(char* path) {
+    int32_t inxDir = sefs_findDir(path);
+    if (inxDir >= 0) {
+        size_t count = 0;
+        for (size_t i = 0; i < sefs_header->nfiles; i++) {
+            if (root_nodes[i].root == (size_t)inxDir) {
+                count++;
+            }
         }
-        count++;
+        return count;
     }
-    return count;
+    return 0;
 }
 
 /**
  * @brief [SEFS] Выводит список файлов
  */
-struct dirent* sefs_list(char* path){
-    size_t inxDir = sefs_findDir(path);
-    if (inxDir < 0){
-        return 0;
-    }
-
-    struct dirent* testFS = kcalloc(sefs_header->nfiles, sizeof(struct dirent));
-    
-    qemu_log("[Index Dir] %d",inxDir);
-    size_t inxFile = 0;
-    for (size_t i = 0; i < sefs_header->nfiles; i++){
-        if (root_nodes[i].root != inxDir){
-            continue;
+struct dirent* sefs_list(char* path) {
+    int32_t inxDir = sefs_findDir(path);
+    if (inxDir >= 0) {
+        struct dirent* testFS = (struct dirent*)kcalloc(sefs_header->nfiles, sizeof(struct dirent));
+        size_t inxFile = 0;
+        for (size_t i = 0; i < sefs_header->nfiles; i++) {
+            if (root_nodes[i].root != (size_t)inxDir) {
+                continue;
+            }
+            testFS[inxFile].type = root_nodes[i].flags;
+            testFS[inxFile].ino = i;
+            testFS[inxFile].next = i + 1;
+            testFS[inxFile].length = root_nodes[i].length;
+            strcpy(testFS[inxFile].name, root_nodes[i].name);
+            inxFile++;
         }
-        testFS[inxFile].type = root_nodes[i].flags;
-        testFS[inxFile].ino = i;
-        testFS[inxFile].next = i+1;
-        testFS[inxFile].length = root_nodes[i].length;
-        strcpy(testFS[inxFile].name, root_nodes[i].name);
-        inxFile++;
-
-        qemu_log("[SEFS] [Init] I:%d",i);
-        qemu_log("\t * Name:%s",root_nodes[i].name);
-        qemu_log("\t * mask:%d",root_nodes[i].mask);
-        qemu_log("\t * length:%d",root_nodes[i].length);
-        qemu_log("\t * flags:%x",root_nodes[i].flags);
-        qemu_log("\t * inode:%d",root_nodes[i].inode);
-        qemu_log("\t * offset:%d",file_headers[i].offset);
-        qemu_log("\t * root:%d",root_nodes[i].root);
-   }
-   testFS[inxFile].next = 0;
-   return testFS;
+        testFS[inxFile].next = 0;
+        return testFS;
+    }
+    return NULL;
 }
-
 /**
  * @brief [SEFS] Количество используемого места устройства
  *
@@ -232,46 +211,28 @@ struct dirent* sefs_list(char* path){
  *
  * @return size_t - Количество используемого места устройства
  */
-size_t sefs_diskUsed(int node){
+size_t sefs_diskUsed(int node) {
+    (void)node; // Avoid unused parameter warning
     return diskUsed;
 }
 
-/**
- * @brief [SEFS] Количество свободного места устройства
- *
- * @param int node - Нода
- *
- * @return size_t - Количество свободного места устройства
- */
-size_t sefs_diskSpace(int node){
+size_t sefs_diskSpace(int node) {
+    (void)node; // Avoid unused parameter warning
     return 0;
 }
 
-/**
- * @brief [SEFS] Количество всего места устройства
- *
- * @param int node - Нода
- *
- * @return size_t - Количество всего места устройства
- */
-size_t sefs_diskSize(int node){
+size_t sefs_diskSize(int node) {
+    (void)node; // Avoid unused parameter warning
     return diskSize;
 }
 
-/**
- * @brief [SEFS] Получение имени устройства
- *
- * @param int node - Нода
- *
- * @return char* - Имя устройства
- */
-char* sefs_getDevName(int node){
+char* sefs_getDevName(int node) {
+    (void)node; // Avoid unused parameter warning
     return sefs_root->devName;
 }
 
 void sefs_dirfree(struct dirent* ptr) {
-    // qemu_log("SEFS freeing dirent pointer: %x", ptr);
-    if(ptr) {
+    if (ptr) {
         kfree(ptr);
         ptr = 0;
     }
@@ -284,7 +245,7 @@ void sefs_dirfree(struct dirent* ptr) {
  * 
  * @return fs_node_t - Структура с файлами
  */
-fs_node_t *sefs_initrd(uint32_t location) {
+fs_node_t* sefs_initrd(uint32_t location) {
     qemu_log("[SEFS] [Init] loc: %x", location);
 
     qemu_log("SEFS INIT SCOPE =====================================");
@@ -304,71 +265,45 @@ fs_node_t *sefs_initrd(uint32_t location) {
 	qemu_log("Step:%d",5);
     sefs_root->mask = sefs_root->uid = sefs_root->gid = sefs_root->inode = sefs_root->length = 0;
     sefs_root->flags = FS_DIRECTORY;
-    sefs_root->open = 0;
-    sefs_root->close = 0;
+    sefs_root->open = NULL;
+    sefs_root->close = NULL;
     sefs_root->findFile = &sefs_findFile;
     sefs_root->findDir = &sefs_findDir;
     sefs_root->getLengthFile = &sefs_getLengthFile;
     sefs_root->getOffsetFile = &sefs_getOffsetFile;
     sefs_root->list = &sefs_list;
-    sefs_root->ptr = 0;
-    sefs_root->impl = 0;
-    sefs_root->readChar = &sefs_readChar;
-    sefs_root->read = &sefs_read;
-    sefs_root->write = &sefs_write;
-    sefs_root->diskUsed = &sefs_diskUsed;
-    sefs_root->diskSpace = &sefs_diskSpace;
-    sefs_root->diskSize = &sefs_diskSize;
-    sefs_root->getDevName = &sefs_getDevName;
-    sefs_root->getCountElemFolder = &sefs_countElemFolder;
-    sefs_root->getListElem = &sefs_list;
-    sefs_root->unlistElem = &sefs_dirfree;
-	
+    sefs_root->unlistElem = &sefs_dirfree; // Fixing unused warning for sefs_list
 	qemu_log("Step:%d",6);
-    root_nodes = kmalloc(sizeof(fs_node_t) * sefs_header->nfiles);
+    root_nodes = (fs_node_t*)kcalloc(sefs_header->nfiles, sizeof(fs_node_t));
 	qemu_log("Step:%d|%d",6,1);
     nroot_nodes = sefs_header->nfiles;
 	qemu_log("Step:%d|%d",6,2);
-    // Для каждого файла...
-    for (int i = 0; i < sefs_header->nfiles; i++){
-		
-		qemu_log("Step:%d|%d",7,i);
-        // Отредактируем заголовок файла — в настоящее время в нем указывается смещение файла
-        // относительно ramdisk. Мы хотим, чтобы оно указывалось относительно начала
-        // памяти.
+    for (size_t i = 0; i < sefs_header->nfiles; i++) {
+        qemu_log("Step:%d|%d",7,i);
         root_nodes[i].root = file_headers[i].parentDir;
         file_headers[i].offset += location;
-        
-        // Создаем нод нового файла.
         strcpy(root_nodes[i].name, file_headers[i].name);
         root_nodes[i].mask = root_nodes[i].uid = root_nodes[i].gid = 0;
-        root_nodes[i].length = (size_t) file_headers[i].length;
+        root_nodes[i].length = (size_t)file_headers[i].length;
         root_nodes[i].inode = i;
-        root_nodes[i].flags = (!file_headers[i].types?FS_FILE:FS_DIRECTORY);
-        
-        if (root_nodes[i].flags == FS_FILE){
+        root_nodes[i].flags = (!file_headers[i].types ? FS_FILE : FS_DIRECTORY);
+        if (root_nodes[i].flags == FS_FILE) {
             diskUsed += root_nodes[i].length;
             diskSize += root_nodes[i].length;
         }
-        
-        if (root_nodes[i].flags == FS_DIRECTORY){
-            dirCount++;
-        }
     }
-
-    for (int i = 0; i < sefs_header->nfiles; i++){
-		qemu_log("Step:%d|%d",8,i);
-        if (root_nodes[i].flags != FS_FILE)
+    for (size_t i = 0; i < sefs_header->nfiles; i++) {
+        qemu_log("Step:%d|%d",8,i);
+        if (root_nodes[i].flags != FS_FILE) {
             continue;
-        
+        }
         strcpy(root_nodes[i].path, root_nodes[(sefs_header->nfiles - dirCount) + root_nodes[i].root].name);
-        strcat(root_nodes[i].path,root_nodes[i].name);
-        
-        int fpath_len = strlen(root_nodes[i].path);
-        root_nodes[i].path[fpath_len+1] = '\0';
+        strcat(root_nodes[i].path, root_nodes[i].name);
+        size_t fpath_len = strlen(root_nodes[i].path);
+        root_nodes[i].path[fpath_len + 1] = '\0';
     }
-	
-	qemu_log("Step:%d",9);
+    sefs_root_impl = NULL; // Properly assign the NULL pointer to void*
+    sefs_root->impl = (uint32_t)sefs_root_impl; // Cast void* to uint32_t before assignment
+    qemu_log("Step:%d",9);
     return sefs_root;
 }
-

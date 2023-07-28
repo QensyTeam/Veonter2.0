@@ -171,24 +171,17 @@ void __com_writeWord(uint16_t port, uint16_t data) {
  * @param times - сколько данных прочесть
  */
 void __com_readBigData(uint16_t port, uint32_t *buffer, size_t times) {
-    for (int32_t index = 0; index < times; index++) {
+    for (size_t index = 0; index < times; index++) {
         buffer[index] = inl(port);
     }
 }
 
-
-/**
- * @brief Запись длинного слова через порт
- *
- * @param port - порт
- * @param buffer - данные
- * @param times - сколько данных отправить
- */
 void __com_writeBigData(uint16_t port, uint32_t *buffer, size_t times) {
-    for (int32_t index = 0; index < times; index++) {
+    for (size_t index = 0; index < times; index++) {
         outl(port, buffer[index]);
     }
 }
+
 
 /**
  * @brief Чтение строки через порт

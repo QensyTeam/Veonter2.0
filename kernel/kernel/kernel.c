@@ -15,7 +15,7 @@ void initrd_sefs(size_t irdst, size_t irded){
     qemu_log("[InitRD] [SEFS] The virtual disk space is located at address %x.", irdst);
     qemu_log("[InitRD] [SEFS] The virtual disk space is ends at %x.", irded);
     
-    //vfs_reg(irdst, irded, VFS_TYPE_MOUNT_SEFS);
+    vfs_reg(irdst, irded, VFS_TYPE_MOUNT_SEFS);
     
     initRD = true;
 }
